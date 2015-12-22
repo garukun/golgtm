@@ -1,0 +1,14 @@
+.idea
+*.iml
+*.sublime-*
+
+glide.lock
+golgtm
+vendor/*
+_pprof/*
+_out/*
+*.out
+*.svg
+*.prof
+*.test
+!Dockerfile.*

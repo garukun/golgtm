@@ -1,0 +1,14 @@
+vendor
+_pprof/*
+Makefile
+*.iml
+
+.git
+.gitignore
+.idea
+*.md
+*.out
+*.svg
+*.prof
+*.test
+!Dockerfile.*
