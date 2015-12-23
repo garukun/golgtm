@@ -9,10 +9,30 @@ PULL_REQUEST, N, LGTM, APPROVED, IN_PROGRESS can be configured through the follo
 */
 package main
 
-import "log"
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"flag"
+	"log"
+	"net/http"
+)
+
+var certClient *http.Client
+
+func init() {
+	pool := x509.NewCertPool()
+	pool.AppendCertsFromPEM(pemCerts)
+	certClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
+}
 
 func main() {
-	lgtm := NewLGTM()
+	flag.Parse()
+
+	if pr := *flagPR; pr != 0 {
+		PR = pr
+	}
+
+	lgtm := NewLGTM(certClient)
 	if !lgtm.IsApproved() {
 		lgtm.Unapprove()
 		log.Println("Not done yet!")
