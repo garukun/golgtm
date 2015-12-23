@@ -38,7 +38,14 @@ func init() {
 	}
 
 	ApprovalTrigger = fatalAssignEnv("LGTM_APPROVAL_TRIGGER")
-	ApprovalCount = fatalAssignEnv("LGTM_APPROVAL_COUNT")
+	count := fatalAssignEnv("LGTM_APPROVAL_COUNT")
+
+	if v, err := strconv.Atoi(count); err != nil {
+		log.Fatal(err)
+	} else {
+		ApprovalCount = v
+	}
+
 	LabelNotReady = fatalAssignEnv("LGTM_GITHUB_LABEL_NOT_READY")
 	LabelReady = fatalAssignEnv("LGTM_GITHUB_LABEL_READY")
 }

@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/google/go-github/github"
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"log"
+	"net/http"
 )
 
 type LGTM struct {
@@ -92,8 +94,9 @@ func (l *LGTM) labelCheck() (hasNotReady bool, hasReady bool) {
 	return
 }
 
-func NewLGTM() *LGTM {
-	c := oauth2.NewClient(oauth2.NoContext, AuthToken)
+func NewLGTM(certClient *http.Client) *LGTM {
+	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, certClient)
+	c := oauth2.NewClient(ctx, AuthToken)
 	g := github.NewClient(c)
 
 	return &LGTM{G: g}
