@@ -30,7 +30,7 @@ func (l *LGTM) IsApproved() bool {
 		l.ReadComments()
 	}
 
-	count := 2
+	count := ApprovalCount
 	for _, c := range l.comments {
 		if *c.Body == ApprovalTrigger {
 			count--
@@ -101,8 +101,10 @@ func NewLGTM() *LGTM {
 
 func fatal(v interface{}, resp *github.Response, err error) interface{} {
 
-	if err != nil {
-		log.Fatal(resp.Header, err)
+	if err != nil && resp != nil {
+		log.Fatal(resp, err)
+	} else if err != nil {
+		log.Fatal(err)
 	}
 
 	return v

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"golang.org/x/oauth2"
 	"log"
 	"os"
@@ -12,8 +13,11 @@ var (
 	Owner, Repo               string
 	PR                        int
 	ApprovalTrigger           string
+	ApprovalCount             int
 	LabelNotReady, LabelReady string
 )
+
+var flagPR = flag.Int("pr", 0, "PR number to check for LGTM.")
 
 func init() {
 	t := fatalAssignEnv("GITHUB_AUTH_TOKEN")
@@ -21,7 +25,11 @@ func init() {
 
 	Owner = fatalAssignEnv("LGTM_GITHUB_OWNER")
 	Repo = fatalAssignEnv("LGTM_GITHUB_REPO")
-	pr := fatalAssignEnv("LGTM_GITHUB_PR")
+
+	pr := os.Getenv("LGTM_GITHUB_PR")
+	if len(pr) == 0 {
+		pr = "0"
+	}
 
 	if v, err := strconv.Atoi(pr); err != nil {
 		log.Fatal(err)
@@ -30,6 +38,7 @@ func init() {
 	}
 
 	ApprovalTrigger = fatalAssignEnv("LGTM_APPROVAL_TRIGGER")
+	ApprovalCount = fatalAssignEnv("LGTM_APPROVAL_COUNT")
 	LabelNotReady = fatalAssignEnv("LGTM_GITHUB_LABEL_NOT_READY")
 	LabelReady = fatalAssignEnv("LGTM_GITHUB_LABEL_READY")
 }

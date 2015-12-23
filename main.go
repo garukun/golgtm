@@ -9,9 +9,18 @@ PULL_REQUEST, N, LGTM, APPROVED, IN_PROGRESS can be configured through the follo
 */
 package main
 
-import "log"
+import (
+	"flag"
+	"log"
+)
 
 func main() {
+	flag.Parse()
+
+	if pr := *flagPR; pr != 0 {
+		PR = pr
+	}
+
 	lgtm := NewLGTM()
 	if !lgtm.IsApproved() {
 		lgtm.Unapprove()
