@@ -13,6 +13,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -33,11 +34,19 @@ func main() {
 	}
 
 	lgtm := NewLGTM(certClient)
-	if !lgtm.IsApproved() {
-		lgtm.Unapprove()
-		log.Println("Not done yet!")
+
+	if *hookPort <= 0 {
+		if !lgtm.IsApproved() {
+			lgtm.Unapprove()
+			log.Println("Not done yet!")
+		} else {
+			lgtm.Approve()
+			log.Println("Approved!")
+		}
 	} else {
-		lgtm.Approve()
-		log.Println("Approved!")
+		log.Print("Started...")
+		http.ListenAndServe(fmt.Sprintf(":%d", *hookPort), http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			HandleHook(resp, req, lgtm.G.Issues)
+		}))
 	}
 }
