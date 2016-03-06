@@ -5,10 +5,14 @@ SRC_IMAGE = garukun/golgtm
 
 default: build
 
-deps:
+update:
 	@docker pull $(GOLANG_IMAGE)
-	$(eval GOPATH := $(shell docker run --rm $(GOLANG_IMAGE) /bin/bash -c 'echo $$GOPATH'))
+
+set-var:
+	$(eval DOCKER_GOPATH := $(shell docker run --rm $(GOLANG_IMAGE) /bin/bash -c 'echo $$GOPATH'))
 	$(eval OUTDIR := $(shell docker run --rm $(GOLANG_IMAGE) /bin/bash -c 'echo $$OUTDIR'))
+
+deps: set-var
 	@rm -rf ./vendor
 	docker run --rm \
 		-v `pwd`:$(DEPSDIR) \
@@ -21,24 +25,24 @@ test:
 
 test-ci: deps
 	docker run --rm \
-		-v `pwd`:$(GOPATH)$(SRCDIR) \
+		-v `pwd`:$(DOCKER_GOPATH)$(SRCDIR) \
 		-v `pwd`/_out:$(OUTDIR) \
-		-w $(GOPATH)$(SRCDIR) \
+		-w $(DOCKER_GOPATH)$(SRCDIR) \
 		$(GOLANG_IMAGE) \
 		/bin/bash -c "coverage.sh | report.sh"
 
-build: deps
+build:
 	@rm -rf _out/golgtm
 	docker run --rm \
-		-v `pwd`:$(GOPATH)$(SRCDIR) \
+		-v `pwd`:$(DOCKER_GOPATH)$(SRCDIR) \
 		-v `pwd`/_out:$(OUTDIR) \
-		-w $(GOPATH)$(SRCDIR) \
+		-w $(DOCKER_GOPATH)$(SRCDIR) \
 		-e "CGO_ENABLED=0" \
 		$(GOLANG_IMAGE) \
 		go build -a -ldflags '-s' -o $(OUTDIR)/golgtm
 
 build-prod:
-	$(eval PROD_IMAGE := $(shell docker build -q -t $(SRC_IMAGE) . | awk '/Successfully built/{print $$NF}'))
+	$(eval PROD_IMAGE := $(shell docker build -q -t $(SRC_IMAGE) . | awk '{ sub(/^sha256:/, ""); print }'))
 	$(if $(PROD_IMAGE), @echo $(PROD_IMAGE), $(error Cannot build production image))
 
 tag-docker: build-prod
