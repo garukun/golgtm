@@ -59,6 +59,7 @@ func HandleHook(resp http.ResponseWriter, req *http.Request, issues *github.Issu
 	if !strings.HasPrefix(strings.ToLower(*event.Comment.Body), "lgtm") {
 		resp.Header().Set(HTTP_HEADER_GOLGTM_HOOK, "not lgtm")
 		resp.WriteHeader(http.StatusNoContent)
+		return
 	}
 
 	labels := make([]string, 0, len(event.Issue.Labels))
