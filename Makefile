@@ -1,61 +1,64 @@
-DEPSDIR = /deps
-SRCDIR = /src/github.com/garukun/golgtm
-GOLANG_IMAGE = vungle/golang
-SRC_IMAGE = garukun/golgtm
+ifndef BUILD_SCOPE
+BUILD_SCOPE=dev
+endif
 
-default: build
+PROJECT=github.com/Vungle/jaeger
+PROJECT_IMAGE=vungle/jaeger:$(BUILD_SCOPE)
 
-update:
-	@docker pull $(GOLANG_IMAGE)
+GO_IMAGE=vungle/golang:1.7
 
-set-var:
-	$(eval DOCKER_GOPATH := $(shell docker run --rm $(GOLANG_IMAGE) /bin/bash -c 'echo $$GOPATH'))
-	$(eval OUTDIR := $(shell docker run --rm $(GOLANG_IMAGE) /bin/bash -c 'echo $$OUTDIR'))
+DOCKER_GOPATH=$(shell docker run --rm $(GO_IMAGE) /bin/bash -c 'echo $$GOPATH')
+DOCKER_WORKDIR=$(DOCKER_GOPATH)/src/$(PROJECT)
+DOCKER_BUILD_SHELL=\
+docker run --rm \
+-v $$(pwd):$(DOCKER_WORKDIR) \
+-v $$(pwd)/_out:/out \
+-e CGO_ENABLED=0 \
+-w $(DOCKER_WORKDIR) \
+$(SHELL_OPTS) \
+$(GO_IMAGE)
+DOCKER_TEST_SHELL=\
+docker run --rm \
+-v $$(pwd):$(DOCKER_WORKDIR) \
+-v $$(pwd)/_out:/out \
+-w $(DOCKER_WORKDIR) \
+$(SHELL_OPTS) \
+$(GO_IMAGE)
 
-deps: set-var
-	@rm -rf ./vendor
-	docker run --rm \
-		-v `pwd`:$(DEPSDIR) \
-		-w $(DEPSDIR) \
-		$(GOLANG_IMAGE) \
-		glide up
+lint:
+	@go fmt $(go list ./... | grep -v vendor)
+	@go vet $(go list ./... | grep -v vendor)
+	@$(DOCKER_BUILD_SHELL) golint | egrep -v "vendor"
 
+deps: clean
+ifeq ($(LATEST),true)
+	rm glide.lock
+endif
+	@echo "Vendoring external dependencies"
+	@$(DOCKER_BUILD_SHELL) glide install
+	@echo "All deps good!"
+
+dev:
+	$(eval SHELL_OPTS := -it)
+	@$(DOCKER_TEST_SHELL) /bin/bash
+
+ifndef TESTS
+TESTS=./...
+endif
 test:
-	$(error Testing for development is not implemented!)
-
-test-ci: deps
-	docker run --rm \
-		-v `pwd`:$(DOCKER_GOPATH)$(SRCDIR) \
-		-v `pwd`/_out:$(OUTDIR) \
-		-w $(DOCKER_GOPATH)$(SRCDIR) \
-		$(GOLANG_IMAGE) \
-		/bin/bash -c "coverage.sh | report.sh"
+	@$(DOCKER_TEST_SHELL) go test $(TEST_OPTS) $$(go list $(TESTS) | grep -v vendor)
 
 build:
-	@rm -rf _out/golgtm
-	docker run --rm \
-		-v `pwd`:$(DOCKER_GOPATH)$(SRCDIR) \
-		-v `pwd`/_out:$(OUTDIR) \
-		-w $(DOCKER_GOPATH)$(SRCDIR) \
-		-e "CGO_ENABLED=0" \
-		$(GOLANG_IMAGE) \
-		go build -a -ldflags '-s' -o $(OUTDIR)/golgtm
+	@$(DOCKER_BUILD_SHELL) go build \
+	-a \
+	-ldflags "-s -X main.revision=`git rev-parse HEAD`" \
+	-o /out/jaeger
+	@docker build -t $(PROJECT_IMAGE) .
 
-build-prod:
-	$(eval PROD_IMAGE := $(shell docker build -q -t $(SRC_IMAGE) . | awk '{ sub(/^sha256:/, ""); print }'))
-	$(if $(PROD_IMAGE), @echo $(PROD_IMAGE), $(error Cannot build production image))
+publish:
+	@docker push $(PROJECT_IMAGE)
 
-tag-docker: build-prod
-	docker tag -f $(PROD_IMAGE) $(SRC_IMAGE)
-	docker tag -f $(PROD_IMAGE) $(SRC_IMAGE):$(TAG)
-
-run: build build-prod
-	docker run $(PROD_IMAGE)
-
-bench:
-	$(error Benchmarking is not implemented!)
-
-nuke:
-	-rm -rf _out vendor
-	-docker rm -f `docker ps -aq`
-	-docker rmi -f `docker images -aq`
+clean:
+	@rm -rf _out vendor
+	@docker volume rm $$(docker volume ls -qf dangling=true) > /dev/null 2>/dev/null || true
+	@echo "Cleaned!"

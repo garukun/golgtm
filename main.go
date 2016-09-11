@@ -1,52 +1,73 @@
 /*
-Package main provides the entry point of the golgtm binary.
-
-Binary golgtm inspects all the comments from a given PULL_REQUEST; if there are more than N number of LGTM comments in
-the list of comments, golgtm will make sure the label APPROVED is attached to the pull request and IN_PROGRESS is
-removed.
-
-PULL_REQUEST, N, LGTM, APPROVED, IN_PROGRESS can be configured through the following ways:
+Package main provides entrypoint for the service.
 */
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
+	"expvar"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
+	"sync"
 )
 
-var certClient *http.Client
+var (
+	port             = flag.Int("port", 8080, "Port on which the service will run")
+	debugPort        = flag.Int("debugport", -1, "Port to which the service will expose debug information")
+	blockProfileRate = flag.Int("blockprofilerate", 0, "Rate at which the profiler profiles for blocking contentions; see 'go doc runtime.SetBlockProfileRate'.")
+)
+
+var (
+	// revision denotes the git commit revision at which the binary is built. The default value
+	// provided here is father of all git revisions, e.g., an empty git tree. It will be replaced to
+	// HEAD commit during build time.
+	revision = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+)
 
 func init() {
-	pool := x509.NewCertPool()
-	pool.AppendCertsFromPEM(pemCerts)
-	certClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
+	flag.Parse()
+
+	exposeBuildInfo()
 }
 
 func main() {
-	flag.Parse()
+	servers := map[string]*http.Server{
+		"main": {
+			Addr:    fmt.Sprintf(":%d", *port),
+			Handler: nil, // TODO: Fill in the main service.
+		},
 
-	if pr := *flagPR; pr != 0 {
-		PR = pr
+		// Add other static servers here.
 	}
 
-	lgtm := NewLGTM(certClient)
+	// Expose debug info via debugPort.
+	if *debugPort != -1 {
+		runtime.SetBlockProfileRate(*blockProfileRate)
 
-	if *hookPort <= 0 {
-		if !lgtm.IsApproved() {
-			lgtm.Unapprove()
-			log.Println("Not done yet!")
-		} else {
-			lgtm.Approve()
-			log.Println("Approved!")
+		servers["debug"] = &http.Server{
+			Addr:    fmt.Sprintf(":%d", *debugPort),
+			Handler: http.DefaultServeMux,
 		}
-	} else {
-		log.Print("Started...")
-		http.ListenAndServe(fmt.Sprintf(":%d", *hookPort), http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-			HandleHook(resp, req, lgtm.G.Issues)
-		}))
 	}
+
+	svcWg := &sync.WaitGroup{}
+	svcWg.Add(len(servers))
+
+	for n, s := range servers {
+		go func(name string, server *http.Server) {
+			log.Printf("Starting server %s (rev:%s) on %s...", name, revision, server.Addr)
+			log.Fatal(server.ListenAndServe())
+			svcWg.Done()
+		}(n, s)
+	}
+
+	svcWg.Wait()
+	log.Print("Bye!")
+}
+
+// exposeBuildInfo method exposes the build information such as revision via the expvar package.
+func exposeBuildInfo() {
+	expvar.NewString("rev").Set(revision)
 }

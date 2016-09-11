@@ -1,4 +1,4 @@
-package main
+package certs
 
 var pemCerts = []byte(`
 -----BEGIN CERTIFICATE-----
