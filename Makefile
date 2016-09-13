@@ -2,19 +2,20 @@ ifndef BUILD_SCOPE
 BUILD_SCOPE=dev
 endif
 
-PROJECT=github.com/Vungle/jaeger
-PROJECT_IMAGE=vungle/jaeger:$(BUILD_SCOPE)
+PROJECT=github.com/garukun/golgtm
+PROJECT_IMAGE=garukun/golgtm:$(BUILD_SCOPE)
 
 GO_IMAGE=vungle/golang:1.7
 
 DOCKER_GOPATH=$(shell docker run --rm $(GO_IMAGE) /bin/bash -c 'echo $$GOPATH')
 DOCKER_WORKDIR=$(DOCKER_GOPATH)/src/$(PROJECT)
+BUILDDIR=server/httpserver
 DOCKER_BUILD_SHELL=\
 docker run --rm \
 -v $$(pwd):$(DOCKER_WORKDIR) \
 -v $$(pwd)/_out:/out \
 -e CGO_ENABLED=0 \
--w $(DOCKER_WORKDIR) \
+-w $(DOCKER_WORKDIR)/$(BUILDDIR) \
 $(SHELL_OPTS) \
 $(GO_IMAGE)
 DOCKER_TEST_SHELL=\
@@ -32,7 +33,7 @@ lint:
 
 deps: clean
 ifeq ($(LATEST),true)
-	rm glide.lock
+	rm $(BUILDDIR)/glide.lock
 endif
 	@echo "Vendoring external dependencies"
 	@$(DOCKER_BUILD_SHELL) glide install
@@ -52,13 +53,13 @@ build:
 	@$(DOCKER_BUILD_SHELL) go build \
 	-a \
 	-ldflags "-s -X main.revision=`git rev-parse HEAD`" \
-	-o /out/jaeger
+	-o /out/golgtm
 	@docker build -t $(PROJECT_IMAGE) .
 
 publish:
 	@docker push $(PROJECT_IMAGE)
 
 clean:
-	@rm -rf _out vendor
+	@rm -rf $(BUILDDIR)/_out $(BUILDDIR)/vendor
 	@docker volume rm $$(docker volume ls -qf dangling=true) > /dev/null 2>/dev/null || true
 	@echo "Cleaned!"

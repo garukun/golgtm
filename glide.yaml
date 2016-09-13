@@ -1,5 +1,0 @@
-package: github.com/garukun/golgtm
-import:
-- package: github.com/google/go-github
-  subpackages:
-  - /github

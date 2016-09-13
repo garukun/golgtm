@@ -4,6 +4,8 @@ Package main provides entrypoint for the service.
 package main
 
 import (
+	_ "net/http/pprof"
+
 	"expvar"
 	"flag"
 	"fmt"
@@ -11,6 +13,8 @@ import (
 	"net/http"
 	"runtime"
 	"sync"
+
+	"github.com/garukun/golgtm/server/httpserver/internal/router"
 )
 
 var (
@@ -36,7 +40,7 @@ func main() {
 	servers := map[string]*http.Server{
 		"main": {
 			Addr:    fmt.Sprintf(":%d", *port),
-			Handler: nil, // TODO: Fill in the main service.
+			Handler: router.DefaultRouter, // TODO: Fill in the main service.
 		},
 
 		// Add other static servers here.
@@ -52,18 +56,18 @@ func main() {
 		}
 	}
 
-	svcWg := &sync.WaitGroup{}
-	svcWg.Add(len(servers))
+	wg := &sync.WaitGroup{}
+	wg.Add(len(servers))
 
 	for n, s := range servers {
 		go func(name string, server *http.Server) {
 			log.Printf("Starting server %s (rev:%s) on %s...", name, revision, server.Addr)
 			log.Fatal(server.ListenAndServe())
-			svcWg.Done()
+			wg.Done()
 		}(n, s)
 	}
 
-	svcWg.Wait()
+	wg.Wait()
 	log.Print("Bye!")
 }
 

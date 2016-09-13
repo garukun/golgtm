@@ -12,3 +12,6 @@ _out/*
 *.prof
 *.test
 !Dockerfile.*
+
+**/vendor
+**/.glide

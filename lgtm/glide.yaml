@@ -1,0 +1,9 @@
+package: github.com/garukun/golgtm/lgtm
+import:
+- package: github.com/garukun/golgtm
+  subpackages:
+  - http/httpadapter
+- package: github.com/google/go-github
+  subpackages:
+  - github
+- package: golang.org/x/oauth2
