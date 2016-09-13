@@ -15,16 +15,14 @@ import (
 type Validator struct {
 	// Secret against the Github signature on every request.
 	Secret []byte
-
-	payload *bytes.Buffer
 }
 
-func (v *Validator) validate(body []byte, signature string) error {
+func (v *Validator) validate(body io.Reader, signature string) error {
 	mac := hmac.New(sha1.New, v.Secret)
-	mac.Write(body)
-	sig := hex.EncodeToString(mac.Sum(nil))
-	if sig != signature {
-		return fmt.Errorf("Invalid signature from Github: %s", signature)
+	io.Copy(mac, body)
+
+	if sig := hex.EncodeToString(mac.Sum(nil)); sig != signature {
+		return fmt.Errorf("Invalid request signature: %s", signature)
 	}
 
 	return nil
@@ -32,27 +30,27 @@ func (v *Validator) validate(body []byte, signature string) error {
 
 func (v *Validator) Adapt(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
+		if req.Method != http.MethodPost {
 			log.Print("Must be HTTP POST method")
-			resp.Header().Set(responseHeader, "not post")
+			resp.Header().Set(ResponseHeader, "not post")
 			resp.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		signature := req.Header.Get(githubSigHeader)
-		v.payload = bytes.NewBuffer(nil)
-		downstream := ioutil.NopCloser(io.TeeReader(req.Body, v.payload))
+		signature := req.Header.Get(GithubSigHeader)
+		downstream := bytes.NewBuffer(nil)
+		payload := io.TeeReader(req.Body, downstream)
 
 		// Skip the first 5 characters because it's used to indicate the hash mechanism, e.g. "sha1:".
 		signature = signature[5:]
-		if err := v.validate(v.payload.Bytes(), signature); err != nil {
+		if err := v.validate(payload, signature); err != nil {
 			log.Print(err)
-			resp.Header().Set(responseHeader, "naughty hacker")
+			resp.Header().Set(ResponseHeader, "naughty hacker")
 			resp.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		req.Body = downstream
+		req.Body = ioutil.NopCloser(downstream)
 
 		h.ServeHTTP(resp, req)
 	})

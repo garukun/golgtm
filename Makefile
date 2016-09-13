@@ -13,7 +13,7 @@ BUILDDIR=server/httpserver
 DOCKER_BUILD_SHELL=\
 docker run --rm \
 -v $$(pwd):$(DOCKER_WORKDIR) \
--v $$(pwd)/_out:/out \
+-v $$(pwd)/$(BUILDDIR)/_out:/out \
 -e CGO_ENABLED=0 \
 -w $(DOCKER_WORKDIR)/$(BUILDDIR) \
 $(SHELL_OPTS) \
@@ -33,7 +33,7 @@ lint:
 
 deps: clean
 ifeq ($(LATEST),true)
-	rm $(BUILDDIR)/glide.lock
+	rm -f $(BUILDDIR)/glide.lock
 endif
 	@echo "Vendoring external dependencies"
 	@$(DOCKER_BUILD_SHELL) glide install
@@ -54,12 +54,12 @@ build:
 	-a \
 	-ldflags "-s -X main.revision=`git rev-parse HEAD`" \
 	-o /out/golgtm
-	@docker build -t $(PROJECT_IMAGE) .
+	@docker build -t $(PROJECT_IMAGE) -f $(BUILDDIR)/Dockerfile $(BUILDDIR)
 
 publish:
 	@docker push $(PROJECT_IMAGE)
 
 clean:
-	@rm -rf $(BUILDDIR)/_out $(BUILDDIR)/vendor
+	@rm -rf $(BUILDDIR)/_out $(BUILDDIR)/vendor $(BUILDDIR)/.glide
 	@docker volume rm $$(docker volume ls -qf dangling=true) > /dev/null 2>/dev/null || true
 	@echo "Cleaned!"

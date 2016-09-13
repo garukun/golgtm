@@ -16,12 +16,12 @@ type EventRouter struct {
 
 func (r *EventRouter) Adapt(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		eventType := req.Header.Get(githubEventHeader)
-		if a, ok := r.Events[eventType]; ok {
-			log.Printf("Event router recognized event: %s.", eventType)
+		eventType := req.Header.Get(GithubEventHeader)
+		a, ok := r.Events[eventType]
+		log.Printf("Event: %s, %t", eventType, ok)
+
+		if ok {
 			h = a.Adapt(h)
-		} else {
-			log.Printf("Event router unrecognized event: %s.", eventType)
 		}
 
 		h.ServeHTTP(resp, req)
