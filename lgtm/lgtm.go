@@ -25,7 +25,7 @@ type LGTM struct {
 
 func New(c *http.Client, authToken string) *LGTM {
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, c)
-	oc := oauth2.NewClient(ctx, authToken)
+	oc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: authToken}))
 
 	g := github.NewClient(oc)
 	h := adapters.Adapt(

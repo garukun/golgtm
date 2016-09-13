@@ -14,7 +14,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/garukun/golgtm/server/httpserver/internal/router"
+	"github.com/garukun/golgtm/http/certs"
+	"github.com/garukun/golgtm/lgtm"
 )
 
 var (
@@ -40,10 +41,10 @@ func main() {
 	servers := map[string]*http.Server{
 		"main": {
 			Addr:    fmt.Sprintf(":%d", *port),
-			Handler: router.DefaultRouter, // TODO: Fill in the main service.
+			Handler: lgtm.New(certs.DefaultHTTPClient, ""),
 		},
 
-		// Add other static servers here.
+		// Add other servers here.
 	}
 
 	// Expose debug info via debugPort.
