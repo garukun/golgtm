@@ -41,7 +41,7 @@ func main() {
 	servers := map[string]*http.Server{
 		"main": {
 			Addr:    fmt.Sprintf(":%d", *port),
-			Handler: lgtm.New(certs.DefaultHTTPClient, lgtm.ConfigFromEnv()),
+			Handler: lgtmHandler(),
 		},
 
 		// Add other servers here.
@@ -75,4 +75,13 @@ func main() {
 // exposeBuildInfo method exposes the build information such as revision via the expvar package.
 func exposeBuildInfo() {
 	expvar.NewString("rev").Set(revision)
+}
+
+func lgtmHandler() http.Handler {
+	conf, err := lgtm.ConfigFromEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return lgtm.New(certs.DefaultHTTPClient, conf)
 }

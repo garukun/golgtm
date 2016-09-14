@@ -6,7 +6,6 @@
 # Project Tech Stack Specific
 # -- Glide Dependency tool
 .glide
-glide.lock
 # -- Vendoring
 vendor
 # -- Temporary build

@@ -55,8 +55,12 @@ build:
 	@$(DOCKER_BUILD_SHELL) go build \
 	-a \
 	-ldflags "-s -X main.revision=`git rev-parse HEAD`" \
-	-o /out/golgtm
-	@docker build -t $(PROJECT_IMAGE) -f $(BUILDDIR)/Dockerfile $(BUILDDIR)
+	-o /out/app
+	@docker build \
+	$(DOCKER_OPTS) \
+	-t $(PROJECT_IMAGE) \
+	-f $(BUILDDIR)/Dockerfile \
+	$(BUILDDIR)
 
 publish:
 	@docker push $(PROJECT_IMAGE)

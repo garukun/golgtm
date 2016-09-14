@@ -1,24 +1,4 @@
-# IDE Miscellany
-.idea
-*.iml
-*.sublime-*
-# -- Also ignore git history
-.git
-.gitignore
-
-# Project Tech Stack Specific
-# -- Glide Dependency tool
-.glide
-glide.lock
-# -- Vendoring
-vendor
-# -- Temporary build
-_pprof
-*.svg
-*.prof
-*.out
-*.test
-# -- Organizational
-Makefile
-*.md
-!Dockerfile.*
+# When building the final Docker image ignore all but the build directory for
+# faster Docker daemon context gathering.
+# TODO(@garukun): Fix it! This may break other Dockerfile's under the root.
+!**/_out
