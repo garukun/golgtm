@@ -41,7 +41,7 @@ func main() {
 	servers := map[string]*http.Server{
 		"main": {
 			Addr:    fmt.Sprintf(":%d", *port),
-			Handler: lgtm.New(certs.DefaultHTTPClient, ""),
+			Handler: lgtm.New(certs.DefaultHTTPClient, lgtm.ConfigFromEnv()),
 		},
 
 		// Add other servers here.

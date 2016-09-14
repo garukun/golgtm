@@ -36,7 +36,9 @@ ifeq ($(LATEST),true)
 	rm -f $(BUILDDIR)/glide.lock
 endif
 	@echo "Vendoring external dependencies"
-	@$(DOCKER_BUILD_SHELL) glide install
+	@mkdir -p $(BUILDDIR)/.glide
+	@$(DOCKER_BUILD_SHELL) /bin/bash -c \
+	"glide mirror set https://$(PROJECT) file://$(DOCKER_WORKDIR) --vcs git && glide install"
 	@echo "All deps good!"
 
 dev:

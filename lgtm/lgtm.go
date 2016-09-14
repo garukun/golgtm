@@ -13,28 +13,41 @@ import (
 // LGTM implements an http.Handler interface and handles incoming GitHub webhook requests to process
 // against a common code review process called, LGTM, a.k.a., "Looks good to me!".
 //
-// The LGTM workflow can be roughly summarized as:
-// 1) Create a new pull request;
-// 2) Comments on a pull request;
-// 3) Label changes to the pull request.
+// The LGTM workflow can be roughly summarized as the management of two states:
+// 1) Needs more review;
+// 2) Approved/Ready to be merged.
+//
+// Regardless of the state of the PR, LGTM will manage the lifecycle of the above two states and
+// provide relevant webhook context that can be used to gate from the PR being merged.
 type LGTM struct {
-	http.Handler
+	h http.Handler
 
 	G *github.Client
+
+	Config Config
 }
 
-func New(c *http.Client, authToken string) *LGTM {
+func (l *LGTM) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	l.h.ServeHTTP(resp, req)
+}
+
+func New(c *http.Client, conf *Config) *LGTM {
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, c)
-	oc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: authToken}))
+	oc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Github.AuthToken}))
 
 	g := github.NewClient(oc)
 	h := adapters.Adapt(
 		http.NotFoundHandler(),
-		&adapters.Validator{},
+
+		&adapters.Validator{Secret: []byte(conf.Github.Secret)},
 		&adapters.EventRouter{
 			Events: map[string]httpadapter.Adapter{},
 		},
 	)
 
-	return &LGTM{Handler: h, G: g}
+	return &LGTM{
+		h:      h,
+		G:      g,
+		Config: *conf,
+	}
 }

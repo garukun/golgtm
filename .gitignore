@@ -1,17 +1,23 @@
+# IDE Miscellany
 .idea
 *.iml
 *.sublime-*
 
+# Project Tech Stack Specific
+# -- Glide Dependency tool
+.glide
 glide.lock
-golgtm
-vendor/*
-_pprof/*
-_out/*
-*.out
+# -- Vendoring
+vendor
+# -- Temporary build
+_pprof
 *.svg
 *.prof
+_out
+*.out
 *.test
+# -- Organizational
 !Dockerfile.*
 
-**/vendor
-**/.glide
+# Project Specific
+golgtm

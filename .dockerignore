@@ -1,14 +1,24 @@
-vendor
-_pprof/*
-Makefile
+# IDE Miscellany
+.idea
 *.iml
-
+*.sublime-*
+# -- Also ignore git history
 .git
 .gitignore
-.idea
-*.md
-*.out
+
+# Project Tech Stack Specific
+# -- Glide Dependency tool
+.glide
+glide.lock
+# -- Vendoring
+vendor
+# -- Temporary build
+_pprof
 *.svg
 *.prof
+*.out
 *.test
+# -- Organizational
+Makefile
+*.md
 !Dockerfile.*
