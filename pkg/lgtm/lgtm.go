@@ -48,7 +48,7 @@ func New(c *http.Client, conf *config.Config) *LGTM {
 	g := github.NewClient(oc)
 	confCopy := *conf
 
-	u := pr.Updater{
+	u := &pr.Updater{
 		Logger: log.New(os.Stdout, "updater", log.LstdFlags),
 		G:      g,
 		Config: &confCopy,
