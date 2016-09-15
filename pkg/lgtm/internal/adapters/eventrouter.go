@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/garukun/golgtm/http/httpadapter"
+	"github.com/garukun/golgtm/pkg/http/httpadapter"
 )
 
 // EventRouter routes a GitHub webhook event to a matching httpadapter.Adapter.

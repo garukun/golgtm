@@ -1,4 +1,4 @@
-package lgtm
+package config
 
 import (
 	"fmt"
@@ -72,8 +72,8 @@ func (t *trigger) Decode(value string) error {
 	return nil
 }
 
-// ConfigFromEnv method retrieves the Config object from the environment variables.
-func ConfigFromEnv() (*Config, error) {
+// NewFromEnv method retrieves the Config object from the environment variables.
+func NewFromEnv() (*Config, error) {
 	c := &Config{}
 
 	if err := envconfig.Process("lgtm", c); err != nil {

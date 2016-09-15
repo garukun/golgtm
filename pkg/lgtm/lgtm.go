@@ -2,10 +2,14 @@ package lgtm
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
 
-	"github.com/garukun/golgtm/http/httpadapter"
-	"github.com/garukun/golgtm/lgtm/internal/adapters"
+	"github.com/garukun/golgtm/pkg/http/httpadapter"
+	"github.com/garukun/golgtm/pkg/lgtm/config"
+	"github.com/garukun/golgtm/pkg/lgtm/internal/adapters"
+	"github.com/garukun/golgtm/pkg/lgtm/internal/pr"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
@@ -24,18 +28,31 @@ type LGTM struct {
 
 	G *github.Client
 
-	Config Config
+	Config config.Config
 }
 
 func (l *LGTM) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	l.h.ServeHTTP(resp, req)
 }
 
-func New(c *http.Client, conf *Config) *LGTM {
+func New(c *http.Client, conf *config.Config) *LGTM {
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, c)
 	oc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Github.AuthToken}))
 
 	g := github.NewClient(oc)
+	confCopy := *conf
+
+	u := pr.Updater{
+		Logger: log.New(os.Stdout, "updater", log.LstdFlags),
+		G:      g,
+		Config: &confCopy,
+	}
+	u.Start()
+
+	l := &LGTM{
+		G:      g,
+		Config: confCopy,
+	}
 	h := adapters.Adapt(
 		http.NotFoundHandler(),
 
@@ -45,9 +62,10 @@ func New(c *http.Client, conf *Config) *LGTM {
 		},
 	)
 
-	return &LGTM{
-		h:      h,
-		G:      g,
-		Config: *conf,
-	}
+	l.h = h
+	return l
+}
+
+func ConfigFromEnv() (*config.Config, error) {
+	return config.NewFromEnv()
 }

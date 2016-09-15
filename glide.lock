@@ -1,14 +1,6 @@
-hash: 8772614b50573be17665f41595b5851103ee9eeb79b37aaa2b8a07bd79a24999
-updated: 2016-09-14T19:03:04.454743663Z
+hash: 51b57eeaa04b7bfd2bff9b80eef36a49d35214280f8b708087348d78d90c00a0
+updated: 2016-09-14T20:24:53.279649685-07:00
 imports:
-- name: github.com/garukun/golgtm
-  version: 9d63a4d68d642ba40037e97ff8073a0c08fe3944
-  subpackages:
-  - certs
-  - http/certs
-  - http/httpadapter
-  - lgtm
-  - lgtm/internal/adapters
 - name: github.com/golang/protobuf
   version: 1f49d83d9aa00e6ce4fc8258c71cc7786aec968a
   subpackages:
@@ -22,7 +14,7 @@ imports:
   subpackages:
   - query
 - name: github.com/kelseyhightower/envconfig
-  version: 1e291572dcb9ba673cdcdb15e0f422702415ebaf
+  version: ac12b1f15efba734211a556d8b125110dc538016
 - name: golang.org/x/net
   version: de35ec43e7a9aabd6a9c54d2898220ea7e44de7d
   subpackages:

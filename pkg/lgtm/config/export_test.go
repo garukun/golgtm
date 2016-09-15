@@ -1,4 +1,4 @@
-package lgtm
+package config
 
 func NewTrigger(t map[string]int) trigger {
 	return trigger(t)

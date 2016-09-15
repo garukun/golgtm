@@ -1,6 +1,0 @@
-package: github.com/garukun/golgtm/server/httpserver
-import:
-- package: github.com/garukun/golgtm
-  subpackages:
-  - certs
-  - lgtm

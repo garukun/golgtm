@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/garukun/golgtm/http/certs"
-	"github.com/garukun/golgtm/lgtm"
+	"github.com/garukun/golgtm/pkg/http/certs"
+	"github.com/garukun/golgtm/pkg/lgtm"
 )
 
 var (

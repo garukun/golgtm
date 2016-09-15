@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/garukun/golgtm/lgtm/internal/adapters"
+	"github.com/garukun/golgtm/pkg/lgtm/internal/adapters"
 )
 
 func TestValidateSignature(t *testing.T) {

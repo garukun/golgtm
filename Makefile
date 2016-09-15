@@ -9,20 +9,23 @@ GO_IMAGE=vungle/golang:1.7
 
 DOCKER_GOPATH=$(shell docker run --rm $(GO_IMAGE) /bin/bash -c 'echo $$GOPATH')
 DOCKER_WORKDIR=$(DOCKER_GOPATH)/src/$(PROJECT)
-BUILDDIR=server/httpserver
-DOCKER_BUILD_SHELL=\
-docker run --rm \
--v $$(pwd):$(DOCKER_WORKDIR) \
--v $$(pwd)/$(BUILDDIR)/_out:/out \
--e CGO_ENABLED=0 \
--w $(DOCKER_WORKDIR)/$(BUILDDIR) \
-$(SHELL_OPTS) \
-$(GO_IMAGE)
-DOCKER_TEST_SHELL=\
+BUILDDIR=cmd/webhook
+CMDDIR=cmd/webhook
+
+DOCKER_DEPS_SHELL=\
 docker run --rm \
 -v $$(pwd):$(DOCKER_WORKDIR) \
 -v $$(pwd)/_out:/out \
 -w $(DOCKER_WORKDIR) \
+$(SHELL_OPTS) \
+$(GO_IMAGE)
+DOCKER_BUILD_SHELL=\
+docker run --rm \
+-v $$(pwd)/:$(DOCKER_WORKDIR) \
+-v $$(pwd)/vendor:$(DOCKER_WORKDIR)/$(CMDDIR)/vendor \
+-v $$(pwd)/$(CMDDIR)/_out:/out \
+-e CGO_ENABLED=0 \
+-w $(DOCKER_WORKDIR)/$(CMDDIR) \
 $(SHELL_OPTS) \
 $(GO_IMAGE)
 
@@ -33,17 +36,17 @@ lint:
 
 deps: clean
 ifeq ($(LATEST),true)
-	rm -f $(BUILDDIR)/glide.lock
+	rm -f glide.lock
 endif
 	@echo "Vendoring external dependencies"
-	@mkdir -p $(BUILDDIR)/.glide
-	@$(DOCKER_BUILD_SHELL) /bin/bash -c \
-	"glide mirror set https://$(PROJECT) file://$(DOCKER_WORKDIR) --vcs git && glide install"
+	@$(DOCKER_DEPS_SHELL) glide install
+	# @$(DOCKER_BUILD_SHELL) /bin/bash -c \
+	# "glide mirror set https://$(PROJECT) file://$(DOCKER_WORKDIR) --vcs git && glide install"
 	@echo "All deps good!"
 
 dev:
 	$(eval SHELL_OPTS := -it)
-	@$(DOCKER_TEST_SHELL) /bin/bash
+	@$(DOCKER_BUILD_SHELL) /bin/bash
 
 ifndef TESTS
 TESTS=./...
@@ -59,13 +62,13 @@ build:
 	@docker build \
 	$(DOCKER_OPTS) \
 	-t $(PROJECT_IMAGE) \
-	-f $(BUILDDIR)/Dockerfile \
-	$(BUILDDIR)
+	-f $(CMDDIR)/Dockerfile \
+	$(CMDDIR)
 
 publish:
 	@docker push $(PROJECT_IMAGE)
 
 clean:
-	@rm -rf $(BUILDDIR)/_out $(BUILDDIR)/vendor $(BUILDDIR)/.glide
+	@rm -rf _out vendor .glide
 	@docker volume rm $$(docker volume ls -qf dangling=true) > /dev/null 2>/dev/null || true
 	@echo "Cleaned!"

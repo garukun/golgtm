@@ -1,17 +1,18 @@
-package lgtm_test
+package config_test
 
 import (
-	"github.com/garukun/golgtm/lgtm"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/garukun/golgtm/pkg/lgtm/config"
 )
 
 func TestConfigFromEnv(t *testing.T) {
 	tests := []struct {
 		err  bool
 		env  map[string]string
-		conf *lgtm.Config
+		conf *config.Config
 	}{
 		// Default values
 		{
@@ -22,32 +23,32 @@ func TestConfigFromEnv(t *testing.T) {
 				"LGTM_GITHUB_OWNER":      "garukun",
 				"LGTM_GITHUB_REPO":       "golgtm",
 			},
-			conf: &lgtm.Config{
-				Github: lgtm.ConfigGithub{
+			conf: &config.Config{
+				Github: config.ConfigGithub{
 					Secret:    "matrix",
 					AuthToken: "keymaker",
 					Owner:     "garukun",
 					Repo:      "golgtm",
 				},
-				Workflow: lgtm.ConfigWorkflow{
-					Context: lgtm.ConfigWorkflowContext{
+				Workflow: config.ConfigWorkflow{
+					Context: config.ConfigWorkflowContext{
 						Name:        "LGTM Code Review",
 						Description: "LGTM Code Review workflow.",
 						URL:         "https://github.com/garukun/golgtm",
 					},
 
-					InReview: lgtm.ConfigWorkflowInReview{
+					InReview: config.ConfigWorkflowInReview{
 						Label: "Needs Review",
-						Trigger: lgtm.NewTrigger(map[string]int{
+						Trigger: config.NewTrigger(map[string]int{
 							"ptal":          1,
 							"please review": 1,
 							":-1:":          1,
 						}),
 					},
 
-					Approved: lgtm.ConfigWorkflowApproved{
+					Approved: config.ConfigWorkflowApproved{
 						Label: "Ready",
-						Trigger: lgtm.NewTrigger(map[string]int{
+						Trigger: config.NewTrigger(map[string]int{
 							"lgtm": 1,
 							":+1:": 1,
 						}),
@@ -67,31 +68,31 @@ func TestConfigFromEnv(t *testing.T) {
 				"LGTM_WORKFLOW_INREVIEW_LABEL":   "custom label",
 				"LGTM_WORKFLOW_INREVIEW_TRIGGER": "trigger1:1,trigger 2:2",
 			},
-			conf: &lgtm.Config{
-				Github: lgtm.ConfigGithub{
+			conf: &config.Config{
+				Github: config.ConfigGithub{
 					Secret:    "matrix",
 					AuthToken: "keymaker",
 					Owner:     "garukun",
 					Repo:      "golgtm",
 				},
-				Workflow: lgtm.ConfigWorkflow{
-					Context: lgtm.ConfigWorkflowContext{
+				Workflow: config.ConfigWorkflow{
+					Context: config.ConfigWorkflowContext{
 						Name:        "custom context",
 						Description: "LGTM Code Review workflow.",
 						URL:         "https://github.com/garukun/golgtm",
 					},
 
-					InReview: lgtm.ConfigWorkflowInReview{
+					InReview: config.ConfigWorkflowInReview{
 						Label: "custom label",
-						Trigger: lgtm.NewTrigger(map[string]int{
+						Trigger: config.NewTrigger(map[string]int{
 							"trigger1":  1,
 							"trigger 2": 2,
 						}),
 					},
 
-					Approved: lgtm.ConfigWorkflowApproved{
+					Approved: config.ConfigWorkflowApproved{
 						Label: "Ready",
-						Trigger: lgtm.NewTrigger(map[string]int{
+						Trigger: config.NewTrigger(map[string]int{
 							"lgtm": 1,
 							":+1:": 1,
 						}),
@@ -126,7 +127,7 @@ func TestConfigFromEnv(t *testing.T) {
 	for i, test := range tests {
 		t.Logf("Testing %d...", i)
 		withTestEnv(test.env, func() {
-			conf, err := lgtm.ConfigFromEnv()
+			conf, err := config.ConfigFromEnv()
 
 			if test.err && err == nil || !test.err && err != nil {
 				t.Errorf("The reutrned error %v did not met with expectation.", err)
