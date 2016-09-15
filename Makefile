@@ -15,17 +15,23 @@ CMDDIR=cmd/webhook
 DOCKER_DEPS_SHELL=\
 docker run --rm \
 -v $$(pwd):$(DOCKER_WORKDIR) \
--v $$(pwd)/_out:/out \
 -w $(DOCKER_WORKDIR) \
 $(SHELL_OPTS) \
 $(GO_IMAGE)
 DOCKER_BUILD_SHELL=\
 docker run --rm \
 -v $$(pwd)/:$(DOCKER_WORKDIR) \
--v $$(pwd)/vendor:$(DOCKER_WORKDIR)/$(CMDDIR)/vendor \
 -v $$(pwd)/$(CMDDIR)/_out:/out \
 -e CGO_ENABLED=0 \
 -w $(DOCKER_WORKDIR)/$(CMDDIR) \
+$(SHELL_OPTS) \
+$(GO_IMAGE)
+DOCKER_TEST_SHELL=\
+docker run --rm \
+-v $$(pwd)/:$(DOCKER_WORKDIR) \
+-v $$(pwd)/_out:/out \
+-e CGO_ENABLED=0 \
+-w $(DOCKER_WORKDIR) \
 $(SHELL_OPTS) \
 $(GO_IMAGE)
 
@@ -40,8 +46,6 @@ ifeq ($(LATEST),true)
 endif
 	@echo "Vendoring external dependencies"
 	@$(DOCKER_DEPS_SHELL) glide install
-	# @$(DOCKER_BUILD_SHELL) /bin/bash -c \
-	# "glide mirror set https://$(PROJECT) file://$(DOCKER_WORKDIR) --vcs git && glide install"
 	@echo "All deps good!"
 
 dev:
@@ -56,7 +60,7 @@ test:
 
 build:
 	@$(DOCKER_BUILD_SHELL) go build \
-	-a \
+	-a -v \
 	-ldflags "-s -X main.revision=`git rev-parse HEAD`" \
 	-o /out/app
 	@docker build \
@@ -69,6 +73,6 @@ publish:
 	@docker push $(PROJECT_IMAGE)
 
 clean:
-	@rm -rf _out vendor .glide
+	@rm -rf $(CMDDIR)/_out vendor .glide
 	@docker volume rm $$(docker volume ls -qf dangling=true) > /dev/null 2>/dev/null || true
 	@echo "Cleaned!"
