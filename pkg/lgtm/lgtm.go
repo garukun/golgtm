@@ -14,6 +14,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Github Event types; see https://developer.github.com/webhooks/#events.
+const (
+	issueCommentEvent = "issue_comment"
+	pullRequestEvent  = "pull_request"
+)
+
 // LGTM implements an http.Handler interface and handles incoming GitHub webhook requests to process
 // against a common code review process called, LGTM, a.k.a., "Looks good to me!".
 //
@@ -58,7 +64,17 @@ func New(c *http.Client, conf *config.Config) *LGTM {
 
 		&adapters.Validator{Secret: []byte(conf.Github.Secret)},
 		&adapters.EventRouter{
-			Events: map[string]httpadapter.Adapter{},
+			Events: map[string]httpadapter.Adapter{
+				issueCommentEvent: &adapters.IssueComment{
+					Updater: u,
+					Config:  &confCopy,
+				},
+				pullRequestEvent: &adapters.PullRequest{
+					Updater: u,
+					Config:  &confCopy,
+					G:       g,
+				},
+			},
 		},
 	)
 
