@@ -12,6 +12,14 @@ import (
 	"github.com/google/go-github/github"
 )
 
+const (
+	prActionOpened      = "opened"
+	prActionReopened    = "reopened"
+	prActionLabeled     = "labeled"
+	prActionUnlabeled   = "unlabeled"
+	prActionSynchronize = "synchronize"
+)
+
 type PullRequest struct {
 	*pr.Updater
 
@@ -66,7 +74,7 @@ func (p *PullRequest) validate(e *github.PullRequestEvent) error {
 	}
 
 	switch a := *action; a {
-	case "opened", "reopened", "labeled", "unlabeled", "synchronized":
+	case prActionOpened, prActionReopened, prActionLabeled, prActionUnlabeled, prActionSynchronize:
 		return nil
 	default:
 		return fmt.Errorf("invalid action: %s", a)
@@ -74,27 +82,62 @@ func (p *PullRequest) validate(e *github.PullRequestEvent) error {
 }
 
 func (p *PullRequest) newUpdate(e *github.PullRequestEvent) (*pr.Update, error) {
+	var updateIssue *github.Issue
+
 	switch *e.Action {
-	case "labeled", "unlabeled":
-		issue, _, err := p.G.Issues.Get(p.Config.Github.Repo, p.Config.Github.Owner, *e.Number)
+	case prActionSynchronize:
+		issue, err := p.getIssue(*e.Number)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, l := range issue.Labels {
-			if *l.Name == p.Config.Workflow.Approved.Label {
-				return &pr.Update{
-					State:       pr.Approved,
-					Number:      *e.Number,
-					PullRequest: e.PullRequest,
-				}, nil
-			}
+		updateIssue = issue
+
+		if !githubLabels(issue.Labels).Contains(p.Config.Workflow.InReview.Label) {
+			// Adding comments in a goroutine is a bit racier because from the moment we verified that it
+			// doesn't contain InReview comments to when the goroutine gets executed, the labels may have
+			// changed.
+			go func(p *PullRequest) {
+				log.Printf("revert %s/%s#%d review status", p.Config.Github.Owner, p.Config.Github.Repo, *e.Number)
+
+				if err := p.addComment(*e.Number, "Files changed in PR, revertig code review status."); err != nil {
+					log.Printf("cannot add comment to %s/%s#%d: %v", p.Config.Github.Owner, p.Config.Github.Repo, *e.Number, err)
+				}
+			}(p)
+		}
+	case prActionLabeled, prActionUnlabeled:
+		issue, err := p.getIssue(*e.Number)
+		if err != nil {
+			return nil, err
+		}
+
+		if githubLabels(issue.Labels).Contains(p.Config.Workflow.Approved.Label) {
+			return &pr.Update{
+				State:       pr.Approved,
+				Number:      *e.Number,
+				PullRequest: e.PullRequest,
+			}, nil
 		}
 	}
 
 	return &pr.Update{
 		State:       pr.InReview,
 		Number:      *e.Number,
+		Issue:       updateIssue,
 		PullRequest: e.PullRequest,
 	}, nil
+}
+
+func (p *PullRequest) getIssue(number int) (*github.Issue, error) {
+	issue, _, err := p.G.Issues.Get(p.Config.Github.Owner, p.Config.Github.Repo, number)
+	return issue, err
+}
+
+func (p *PullRequest) addComment(number int, comment string) error {
+	ic := &github.IssueComment{
+		Body: &comment,
+	}
+
+	_, _, err := p.G.Issues.CreateComment(p.Config.Github.Owner, p.Config.Github.Repo, number, ic)
+	return err
 }

@@ -1,0 +1,18 @@
+---
+sudo: required
+services:
+  - docker
+
+language: go
+
+before_script:
+ - pwd
+
+script:
+  - make deps test
+  - make build
+
+# Testing against latest external dependencies should not be marked as build failure.
+# TODO(@garuku): But its exit status should be exposed.
+after_success:
+  - sudo rm -rf cmd/webhook/_out .glide glide.lock vendor && make deps test LATEST=true

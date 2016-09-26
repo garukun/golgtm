@@ -116,7 +116,14 @@ func (c *IssueComment) checkTriggers(comment string) (*pr.Update, error) {
 }
 
 func (c *IssueComment) shouldUpdateLabels(labels []github.Label, name string) bool {
-	for _, label := range labels {
+	return !githubLabels(labels).Contains(name)
+}
+
+type githubLabels []github.Label
+
+// Contains method return whether a given label name is in a list of GitHub labels.
+func (l githubLabels) Contains(name string) bool {
+	for _, label := range l {
 		if *label.Name == name {
 			return true
 		}

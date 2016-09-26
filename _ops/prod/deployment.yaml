@@ -1,0 +1,49 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: lgtm-garukun-golgtm
+  labels:
+    app: lgtm
+    repo: "garukun-golgtm"
+    tier: tool
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 200%
+      maxUnavailable: 10%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: lgtm
+        repo: "garukun-golgtm"
+        tier: tool
+    spec:
+      containers:
+        - name: lgtm-garukun-golgtm
+          image: garukun/golgtm:1.2.0
+          imagePullPolicy: Always
+          args:
+            - -port=8080
+            - -debugport=6689
+          env:
+          - name: LGTM_GITHUB_AUTH_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: lgtm-garukun-golgtm
+                key: github.authkey
+          - name: LGTM_GITHUB_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: lgtm-garukun-golgtm
+                key: github.webhooksecret
+          - name: LGTM_GITHUB_OWNER
+            value: garukun
+          - name: LGTM_GITHUB_REPO
+            value: golgtm
+          resources:
+            limits:
+              cpu: 50m
+              memory: 200Mi
+      terminationGracePeriodSeconds: 5

@@ -2,6 +2,7 @@
 .idea
 *.iml
 *.sublime-*
+.DS_Store
 
 # Project Tech Stack Specific
 # -- Glide Dependency tool

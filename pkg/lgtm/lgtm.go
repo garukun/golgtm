@@ -18,6 +18,7 @@ import (
 const (
 	issueCommentEvent = "issue_comment"
 	pullRequestEvent  = "pull_request"
+	pingEvent         = "ping"
 )
 
 // LGTM implements an http.Handler interface and handles incoming GitHub webhook requests to process
@@ -65,6 +66,7 @@ func New(c *http.Client, conf *config.Config) *LGTM {
 		&adapters.Validator{Secret: []byte(conf.Github.Secret)},
 		&adapters.EventRouter{
 			Events: map[string]httpadapter.Adapter{
+				pingEvent: adapters.Ping{},
 				issueCommentEvent: &adapters.IssueComment{
 					Updater: u,
 					Config:  &confCopy,

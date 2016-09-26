@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lgtm-garukun-golgtm
+  labels:
+    app: lgtm
+    repo: "garukun-golgtm"
+    tier: tool
+spec:
+  ports:
+    - name: "service"
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: lgtm
+    repo: "garukun-golgtm"
+    tier: tool

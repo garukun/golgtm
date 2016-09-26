@@ -127,7 +127,7 @@ func TestConfigFromEnv(t *testing.T) {
 	for i, test := range tests {
 		t.Logf("Testing %d...", i)
 		withTestEnv(test.env, func() {
-			conf, err := config.ConfigFromEnv()
+			conf, err := config.NewFromEnv()
 
 			if test.err && err == nil || !test.err && err != nil {
 				t.Errorf("The reutrned error %v did not met with expectation.", err)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -22,7 +23,7 @@ func (v *Validator) validate(body io.Reader, signature string) error {
 	io.Copy(mac, body)
 
 	if sig := hex.EncodeToString(mac.Sum(nil)); sig != signature {
-		return fmt.Errorf("Invalid request signature: %s", signature)
+		return fmt.Errorf("Invalid request signature: %s, expecting %s", signature, sig)
 	}
 
 	return nil
@@ -45,6 +46,7 @@ func (v *Validator) Adapt(h http.Handler) http.Handler {
 		signature = signature[5:]
 		if err := v.validate(payload, signature); err != nil {
 			log.Print(err)
+			log.Printf("HTTP request body: %s", base64.StdEncoding.EncodeToString(downstream.Bytes()))
 			resp.Header().Set(ResponseHeader, "naughty hacker")
 			resp.WriteHeader(http.StatusBadRequest)
 			return

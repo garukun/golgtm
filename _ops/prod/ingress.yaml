@@ -1,0 +1,18 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: lgtm-garukun-golgtm
+  labels:
+    app: lgtm
+    repo: "garukun-golgtm"
+    tier: tool
+spec:
+  rules:
+    - host: lgtm.vungle.io
+      http:
+        paths:
+          - path: /garukun/golgtm
+            backend:
+              serviceName: lgtm-garukun-golgtm
+              servicePort: 80
