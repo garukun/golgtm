@@ -100,13 +100,13 @@ func (c *IssueComment) newUpdate(e *github.IssueCommentEvent) (*pr.Update, error
 func (c *IssueComment) checkTriggers(comment string) (*pr.Update, error) {
 	comment = strings.ToLower(strings.TrimSpace(comment))
 	for t := range c.Config.Workflow.Approved.Trigger {
-		if strings.HasPrefix(comment, t) && strings.HasSuffix(comment, t) {
+		if strings.HasPrefix(comment, t) || strings.HasSuffix(comment, t) {
 			return &pr.Update{State: pr.Approved}, nil
 		}
 	}
 
 	for t := range c.Config.Workflow.InReview.Trigger {
-		if strings.HasPrefix(comment, t) && strings.HasSuffix(comment, t) {
+		if strings.HasPrefix(comment, t) || strings.HasSuffix(comment, t) {
 			return &pr.Update{State: pr.InReview}, nil
 		}
 	}
