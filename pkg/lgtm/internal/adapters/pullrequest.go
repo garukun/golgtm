@@ -100,7 +100,7 @@ func (p *PullRequest) newUpdate(e *github.PullRequestEvent) (*pr.Update, error) 
 			go func(p *PullRequest) {
 				log.Printf("revert %s/%s#%d review status", p.Config.Github.Owner, p.Config.Github.Repo, *e.Number)
 
-				if err := p.addComment(*e.Number, "Files changed in PR, revertig code review status."); err != nil {
+				if err := p.addComment(*e.Number, "Files changed in PR, reverting code review status."); err != nil {
 					log.Printf("cannot add comment to %s/%s#%d: %v", p.Config.Github.Owner, p.Config.Github.Repo, *e.Number, err)
 				}
 			}(p)

@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: lgtm-garukun-golgtm
-          image: garukun/golgtm:1.2.1
+          image: garukun/golgtm:1.2.2
           imagePullPolicy: Always
           args:
             - -port=8080
